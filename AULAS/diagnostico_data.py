@@ -1,14 +1,21 @@
-# diagnostico_data.py — rodar antes de corrigir
-import pandas as pd
+import unittest
 
-csv_path = r"C:\Users\borba\.cache\kagglehub\datasets\namespaiva\base-varejo\versions\1\Base Varejo.csv"
-df = pd.read_csv(csv_path, encoding="latin1", sep=";")
+class TestEstatistica(unittest.TestCase):
+    def setUp(self):
+        self.df = pd.DataFrame({"CL_FHL": [0, 1, 1, 2, 2, 2, 3, 4]})
 
-# Teste 1: conversão tolerante (dayfirst=True)
-conv = pd.to_datetime(df["DATA"], dayfirst=True, errors="coerce")
-print("NaT com dayfirst=True:", conv.isna().sum())
+    def test_media(self):
+        est = estatistica_descritiva(self.df)
+        self.assertAlmostEqual(est["media"], 1.875)
 
-# Teste 2: padrões dos que ainda falharem
-mascara = conv.isna()
-print("Padrões (10 primeiros caracteres):")
-print(df.loc[mascara, "DATA"].astype(str).str[:10].value_counts().head(20))
+    def test_moda(self):
+        est = estatistica_descritiva(self.df)
+        self.assertEqual(est["moda"], 2)
+
+    def test_min_max(self):
+        est = estatistica_descritiva(self.df)
+        self.assertEqual(est["minimo"], 0)
+        self.assertEqual(est["maximo"], 4)
+
+if __name__ == "__main__":
+    unittest.main()
