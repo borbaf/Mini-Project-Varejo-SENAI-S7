@@ -143,3 +143,104 @@ def aplicar_transformacoes(df: pd.DataFrame) -> pd.DataFrame:
         df[col] = df[col].apply(limpar_texto)
     df["PR_CAT"] = df["PR_CAT"].apply(tratar_categoria)
     return df
+
+# ====================================================================
+# SPRINT 3 — LIMPEZA DE NULOS E DUPLICATAS 
+# ====================================================================
+
+# Valores substitutos para dados ausentes em colunas de texto
+SUBSTITUTOS_TEXTO = {
+    "CL_GENERO": "DESCONHECIDO",
+    "CL_SEG": "DESCONHECIDO",
+    "PR_NOME": "SEM NOME",
+}
+# Colunas numéricas que identificam um registro (nulo = corrompido)
+COLUNAS_ID = ["CO_ID", "CL_ID", "PR_ID"]
+# Chave de duplicidade: mesmo item (PR_ID) da mesma compra (CO_ID) no mesmo dia
+CHAVE_DUPLICATA = ["CO_ID", "PR_ID", "DATA"]
+
+def remover_colunas_vazias(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Remove colunas 100% vazias (ex.: 'Unnamed: 10' a 'Unnamed: 13').
+    """
+    colunas_vazias = [col for col in df.columns if df[col].isna().all()]
+    if colunas_vazias:
+        print(f"[Sprint 3] Removendo colunas 100% vazias: {colunas_vazias}")
+        return df.drop(columns=colunas_vazias)
+    return df
+
+def tratar_nulos(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Trata valores nulos de forma vetorizada.
+
+    - Texto: nulos/vazios -> valor substituto (preserva a linha).
+    - IDs: nulos -> remove a linha (registro irrecuperável).
+    """
+    df = df.copy()
+
+    # 1. Categoria: '#N/D' e nulos -> 'SEM CATEGORIA' (vetorizado)
+    df["PR_CAT"] = df["PR_CAT"].fillna("").replace(
+        {"#N/D": "SEM CATEGORIA", "#N/A": "SEM CATEGORIA", "": "SEM CATEGORIA"}
+    )
+
+    # 2. Demais textos: nulos/vazios -> substituto (loop único, sem repetição)
+    for col, substituto in SUBSTITUTOS_TEXTO.items():
+        df[col] = df[col].fillna(substituto).replace("", substituto)
+
+    # 3. IDs nulos: remove as linhas corrompidas
+    antes = len(df)
+    df = df.dropna(subset=COLUNAS_ID)
+    removidas = antes - len(df)
+    if removidas:
+        print(f"[Sprint 3] Removidas {removidas} linhas com ID nulo.")
+
+    return df
+
+def remover_duplicatas(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Remove linhas duplicadas (mesmo item da mesma compra no mesmo dia).
+    Mantém a primeira ocorrência (registro original).
+    """
+    antes = len(df)
+    df = df.drop_duplicates(subset=CHAVE_DUPLICATA, keep="first")
+    print(f"[Sprint 3] Duplicatas removidas: {antes - len(df)}")
+    return df
+
+def ajustar_tipos(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Garante os tipos finais: DATA como datetime e colunas numéricas
+    como inteiros com suporte a nulo (Int64).
+    """
+    df = df.copy()
+    df["DATA"] = pd.to_datetime(df["DATA"], errors="coerce")
+    for col in COLUNAS_ID + ["CL_EC", "CL_FHL"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
+    return df
+
+def limpar_base(df: pd.DataFrame) -> pd.DataFrame:
+    """Orquestra a limpeza completa do Sprint 3."""
+    return (
+        df.pipe(remover_colunas_vazias)
+          .pipe(tratar_nulos)
+          .pipe(remover_duplicatas)
+          .pipe(ajustar_tipos)
+    )
+
+# --------------------------------------------------------------------
+# EXECUÇÃO DO SPRINT 3 NA BASE REAL
+# --------------------------------------------------------------------
+print("\n" + "=" * 68)
+print("SPRINT 3 — LIMPEZA DE NULOS E DUPLICATAS")
+print("=" * 68)
+
+df = limpar_base(df)
+
+print(f"\n[Resultado] Registros após limpeza : {len(df)}")
+print(f"[Resultado] Colunas após limpeza   : {df.columns.tolist()}")
+print("\n[Resultado] Valores nulos restantes por coluna:")
+print(df.isna().sum())
+print("\n[Resultado] Tipos de dados finais:")
+print(df.dtypes)
+print("\n[Resultado] Primeiras 5 linhas limpas:")
+print(df.head())
+
