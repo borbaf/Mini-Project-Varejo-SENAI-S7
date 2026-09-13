@@ -301,9 +301,6 @@ def exibir_estatisticas(estatisticas: dict) -> None:
 # --------------------------------------------------------------------
 # EXECUÇÃO DO SPRINT 4 NA BASE REAL
 # --------------------------------------------------------------------
-print("\n" + "=" * 68)
-print("SPRINT 4 — ESTATÍSTICA DESCRITIVA")
-print("=" * 68)
 
 estatisticas = estatistica_descritiva(df)
 exibir_estatisticas(estatisticas)
@@ -453,6 +450,9 @@ def gerar_relatorio(df: pd.DataFrame) -> None:
     print(f"   - Período analisado: {mes.index.min()} a {mes.index.max()}")
     melhor_mes = mes.idxmax()
     print(f"   - Mês de maior volume: {melhor_mes} ({mes.max():,} itens).")
+    print("   - ATENÇÃO: 2022-09 e 2022-10 apresentam queda abrupta")
+    print("     (1.297 e 2.373 itens) — provável coleta incompleta no")
+    print("     fim da série, não sazonalidade real.")
     print(f"   - Média mensal: {mes.mean():,.0f} itens.")
 
     # --- Insight 6: limitações ---
