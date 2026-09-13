@@ -1,20 +1,32 @@
 import kagglehub
-from kagglehub import KaggleDatasetAdapter
+import zipfile
+import pandas as pd
+import os
 
-file_path = "Base Varejo.csv"
+path = kagglehub.dataset_download("namespaiva/base-varejo")
 
-df = kagglehub.load_dataset(
-  KaggleDatasetAdapter.PANDAS,
-  "namespaiva/base-varejo",
-  file_path,
-  pandas_kwargs={
-      "encoding": "latin1",
-      "sep": None,            # <-- detecta o separador automaticamente
-      "engine": "python",     # <-- necessário para o sep=None
-      "on_bad_lines": "skip", # <-- ignora linhas problemáticas, se houver
-  },
-)
+# Encontra o arquivo que é um ZIP (mesmo com nome .csv)
+zip_path = None
+for root, dirs, files in os.walk(path):
+    for f in files:
+        if f.endswith(".csv"):  # o "Base Varejo.csv" é na verdade um zip
+            zip_path = os.path.join(root, f)
+            break
 
-print("Shape:", df.shape)
+print("Arquivo encontrado:", zip_path)
+
+# Extrai o conteúdo do ZIP para uma pasta "extraido"
+destino = os.path.join(os.path.dirname(zip_path), "extraido")
+os.makedirs(destino, exist_ok=True)
+
+with zipfile.ZipFile(zip_path, "r") as z:
+    z.extractall(destino)
+    print("Conteúdo do ZIP:", z.namelist())
+
+# Lê o CSV real de dentro do ZIP
+csv_real = os.path.join(destino, "Base Varejo.csv")  # ajuste o nome conforme o namelist()
+df = pd.read_csv(csv_real, encoding="latin1", sep=";")
+
+print("\nShape:", df.shape)
 print("Colunas:", df.columns.tolist())
 print(df.head())
