@@ -136,7 +136,7 @@ def validar_data(data_str: str, formato: str = "%d/%m/%Y") -> bool:
 def aplicar_transformacoes(df: pd.DataFrame) -> pd.DataFrame:
     """Aplica todas as transformações de tipo/limpeza no DataFrame."""
     df = df.copy()
-    df["DATA"] = pd.to_datetime(df["DATA"], format="%d/%m/%Y", errors="coerce")
+    df["DATA"] = pd.to_datetime(df["DATA"], dayfirst=True, errors="coerce")
     for col in ["CO_ID", "CL_ID", "CL_EC", "CL_FHL", "PR_ID"]:
         df[col] = df[col].apply(converter_inteiro)
     for col in ["CL_GENERO", "CL_SEG", "PR_NOME"]:
@@ -208,11 +208,13 @@ def remover_duplicatas(df: pd.DataFrame) -> pd.DataFrame:
 
 def ajustar_tipos(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Garante os tipos finais: DATA como datetime e colunas numéricas
-    como inteiros com suporte a nulo (Int64).
+    Garante os tipos finais com conversão tolerante de datas.
+
+    dayfirst=True interpreta '01/02/2019' como 1º de fevereiro (padrão BR)
+    e também aceita formatos ISO (2019-02-01) e ano com 2 dígitos.
     """
     df = df.copy()
-    df["DATA"] = pd.to_datetime(df["DATA"], errors="coerce")
+    df["DATA"] = pd.to_datetime(df["DATA"], dayfirst=True, errors="coerce")
     for col in COLUNAS_ID + ["CL_EC", "CL_FHL"]:
         df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
     return df
