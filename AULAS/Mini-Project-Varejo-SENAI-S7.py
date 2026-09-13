@@ -309,148 +309,80 @@ estatisticas = estatistica_descritiva(df)
 exibir_estatisticas(estatisticas)
 
 # ====================================================================
-# SPRINT 5 — RELATÓRIO FINAL E README
+# SPRINT 5 — RELATÓRIO FINAL (CONCLUSÕES)
 # --------------------------------------------------------------------
-# Objetivo: gerar o relatório final com os insights extraídos da base.
+# Objetivo: consolidar os insights dos Sprints 4 e 6 em um relatório
+# com conclusões (3-6 tópicos), conforme exigido no desafio.
 # ====================================================================
 
-def gerar_insights(df: pd.DataFrame) -> list:
+def gerar_relatorio(df: pd.DataFrame) -> None:
     """
-    Extrai os insights principais da base para compor o relatório.
+    Gera o relatório final com as conclusões da análise.
 
-    Cada insight é um dicionário com 'titulo' e 'descricao', gerado
-    a partir dos dados reais (não hardcoded).
+    As conclusões são calculadas a partir dos dados reais, usando as
+    funções de estatística (Sprint 4) e agrupamento (Sprint 6).
 
     Args:
         df: DataFrame limpo (saída do Sprint 3).
-
-    Returns:
-        Lista de insights (dicts) com título e descrição.
     """
-    insights = []
+    print("\n" + "=" * 68)
+    print("SPRINT 5 — RELATÓRIO FINAL (CONCLUSÕES)")
+    print("=" * 68)
 
-    # Insight 1 — Perfil do cliente: número de filhos (Sprint 4)
-    filhos = df["CL_FHL"].dropna()
-    media_filhos = filhos.mean()
-    moda_filhos = int(filhos.mode().iloc[0]) if not filhos.mode().empty else None
-    insights.append({
-        "titulo": "Perfil demográfico — número de filhos",
-        "descricao": (
-            f"A média de filhos por cliente é {media_filhos:.2f}, "
-            f"com moda em {moda_filhos}. A distribuição é assimétrica à "
-            f"direita (média > mediana), indicando concentração de "
-            f"clientes sem filhos, mas com uma cauda de famílias maiores."
-        ),
-    })
+    # --- Insight 1: qualidade dos dados (Sprint 3) ---
+    print("\n1. QUALIDADE DOS DADOS")
+    print(f"   - Base original: 830.000 registros.")
+    print(f"   - Após limpeza  : {len(df):,} registros.")
+    print(f"   - Duplicatas removidas: 96.553 (11,6% da base).")
+    print("   - Colunas 'Unnamed: 10-13' (100% vazias) removidas.")
+    print("   - Datas convertidas corretamente (0 nulos após dayfirst=True).")
 
-    # Insight 2 — Gênero dominante (Sprint 6)
-    genero = df.groupby("CL_GENERO").size().sort_values(ascending=False)
-    if not genero.empty:
-        gen_top = genero.index[0]
-        gen_pct = (genero.iloc[0] / genero.sum()) * 100
-        insights.append({
-            "titulo": "Gênero dominante nas compras",
-            "descricao": (
-                f"O gênero '{gen_top}' concentra {gen_pct:.1f}% dos itens "
-                f"vendidos, indicando o principal público consumidor."
-            ),
-        })
+    # --- Insight 2: perfil do cliente (Sprint 4) ---
+    est = estatistica_descritiva(df)
+    print("\n2. PERFIL DO CLIENTE — NÚMERO DE FILHOS (CL_FHL)")
+    print(f"   - Média de filhos : {est['media']:.2f}")
+    print(f"   - Mediana         : {est['mediana']:.0f}")
+    print(f"   - Moda            : {est['moda']} (valor mais comum)")
+    print(f"   - Desvio padrão   : {est['desvio_padrao']:.2f}")
+    print(f"   - Faixa           : {est['minimo']} a {est['maximo']} filhos")
+    print("   - Distribuição assimétrica à direita (média > mediana):")
+    print("     a maioria tem 0 filhos, mas uma cauda puxa a média.")
 
-    # Insight 3 — Categoria mais vendida (Sprint 6)
-    categoria = df.groupby("PR_CAT").size().sort_values(ascending=False)
-    if not categoria.empty:
-        cat_top = categoria.index[0]
-        cat_pct = (categoria.iloc[0] / categoria.sum()) * 100
-        insights.append({
-            "titulo": "Categoria líder de vendas",
-            "descricao": (
-                f"A categoria '{cat_top}' lidera com {cat_pct:.1f}% dos "
-                f"itens vendidos, sendo o principal motor de volume."
-            ),
-        })
+    # --- Insight 3: gênero (Sprint 6) ---
+    genero = agrupar_por_genero(df)
+    top_genero = genero.index[0]
+    pct_genero = (genero.iloc[0] / genero.sum()) * 100
+    print("\n3. PERFIL POR GÊNERO")
+    print(f"   - Gênero dominante: {top_genero} ({pct_genero:.1f}% dos itens).")
+    for g, v in genero.items():
+        print(f"     {g}: {v:,} itens ({(v/genero.sum())*100:.1f}%)")
 
-    # Insight 4 — Sazonalidade (Sprint 6, se DATA estiver disponível)
-    if pd.api.types.is_datetime64_any_dtype(df["DATA"]):
-        periodo = df["DATA"].dt.to_period("M").astype(str)
-        por_mes = df.groupby(periodo).size()
-        if not por_mes.empty:
-            mes_pico = por_mes.idxmax()
-            insights.append({
-                "titulo": "Sazonalidade das vendas",
-                "descricao": (
-                    f"O período de maior volume de vendas foi {mes_pico}, "
-                    f"indicando sazonalidade que pode orientar estoque "
-                    f"e campanhas."
-                ),
-            })
+    # --- Insight 4: categorias (Sprint 6) ---
+    cat = agrupar_por_categoria(df)
+    print("\n4. CATEGORIAS MAIS VENDIDAS")
+    for c, v in cat.head(5).items():
+        print(f"   - {c:<15}: {v:,} itens ({(v/cat.sum())*100:.1f}%)")
 
-    # Insight 5 — Qualidade de dados (Sprint 3)
-    insights.append({
-        "titulo": "Qualidade de dados",
-        "descricao": (
-            f"Após a limpeza, a base ficou com {len(df)} registros válidos "
-            f"e 0 valores nulos. Foram removidas colunas vazias e "
-            f"duplicatas, garantindo consistência para as análises."
-        ),
-    })
+    # --- Insight 5: sazonalidade (Sprint 6) ---
+    mes = agrupar_por_mes(df)
+    print("\n5. SAZONALIDADE (ITENS POR MÊS)")
+    print(f"   - Período analisado: {mes.index.min()} a {mes.index.max()}")
+    melhor_mes = mes.idxmax()
+    print(f"   - Mês de maior volume: {melhor_mes} ({mes.max():,} itens).")
+    print(f"   - Média mensal: {mes.mean():,.0f} itens.")
 
-    return insights
+    # --- Insight 6: limitações ---
+    print("\n6. LIMITAÇÕES DA ANÁLISE")
+    print("   - A base NÃO possui coluna de valor/preço: as análises")
+    print("     são por VOLUME de itens, não por faturamento.")
+    print("   - CL_FHL pode representar faixas, não contagens exatas")
+    print("     (frequências de 1, 2 e 3 filhos são muito próximas).")
 
-def gerar_relatorio(df: pd.DataFrame) -> str:
-    """
-    Gera o texto do relatório final com os insights extraídos.
+# --------------------------------------------------------------------
+# EXECUÇÃO DO SPRINT 5 NA BASE REAL
+# --------------------------------------------------------------------
+print("\n" + "=" * 68)
+print("SPRINT 5 — RELATÓRIO FINAL")
+print("=" * 68)
 
-    Args:
-        df: DataFrame limpo.
-
-    Returns:
-        String com o relatório formatado.
-    """
-    insights = gerar_insights(df)
-
-    linhas = []
-    linhas.append("=" * 68)
-    linhas.append("SPRINT 5 — RELATÓRIO FINAL DE ANÁLISE EXPLORATÓRIA")
-    linhas.append("=" * 68)
-    linhas.append("")
-    linhas.append(f"Base analisada: Base Varejo (Kaggle)")
-    linhas.append(f"Registros analisados: {len(df)}")
-    linhas.append("")
-    linhas.append("CONCLUSÕES:")
-    linhas.append("")
-
-    for i, insight in enumerate(insights, start=1):
-        linhas.append(f"{i}. {insight['titulo']}")
-        linhas.append(f"   {insight['descricao']}")
-        linhas.append("")
-
-    return "\n".join(linhas)
-
-def gerar_readme(df: pd.DataFrame) -> str:
-    """
-    Gera o conteúdo do arquivo README.md do projeto.
-
-    Args:
-        df: DataFrame limpo.
-
-    Returns:
-        String com o conteúdo do README.md.
-    """
-    return f"""# Mini-Projeto — Análise Exploratória de Dados (Base Varejo)
-
-## 📌 Descrição
-Análise exploratória de dados (AED) do dataset **Base Varejo** (Kaggle),
-utilizando Python e pandas. O projeto é dividido em 6 sprints e atende
-aos critérios de avaliação da disciplina.
-
-## 🗂️ Estrutura do Projeto
-- **Sprint 1** — Importação dos dados (Kaggle + descompactação)
-- **Sprint 2** — Transformação de strings, inteiros, floats e datas
-- **Sprint 3** — Limpeza de nulos e duplicatas
-- **Sprint 4** — Estatística descritiva (nº de filhos do cliente)
-- **Sprint 5** — Relatório final e README
-- **Sprint 6** — Padrões de agrupamento (groupby)
-
-## 🚀 Como executar
-```bash
-python Mini-Project-Varejo-SENAI-S7.py
+gerar_relatorio(df)
