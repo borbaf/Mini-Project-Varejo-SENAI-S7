@@ -309,6 +309,90 @@ estatisticas = estatistica_descritiva(df)
 exibir_estatisticas(estatisticas)
 
 # ====================================================================
+# SPRINT 6 — PADRÕES DE AGRUPAMENTO (GROUPBY)
+# --------------------------------------------------------------------
+# Objetivo: identificar padrões de venda com agrupamentos (groupby),
+# atendendo o critério nº 6 (pelo menos 2 agrupamentos).
+#
+# OBSERVAÇÃO: a base NÃO possui coluna de valor/preço. Portanto, os
+# agrupamentos são feitos por CONTAGEM DE ITENS vendidos (size()),
+# não por soma de valores monetários.
+# ====================================================================
+
+def agrupar_por_genero(df: pd.DataFrame) -> pd.Series:
+    """
+    Agrupamento 1: total de itens vendidos por gênero do cliente.
+
+    Args:
+        df: DataFrame limpo.
+
+    Returns:
+        Series com contagem de itens por CL_GENERO, ordenada decrescente.
+    """
+    return df.groupby("CL_GENERO").size().sort_values(ascending=False)
+
+def agrupar_por_categoria(df: pd.DataFrame) -> pd.Series:
+    """
+    Agrupamento 2: total de itens vendidos por categoria de produto.
+
+    Args:
+        df: DataFrame limpo.
+
+    Returns:
+        Series com contagem de itens por PR_CAT, ordenada decrescente.
+    """
+    return df.groupby("PR_CAT").size().sort_values(ascending=False)
+
+def agrupar_por_mes(df: pd.DataFrame) -> pd.Series:
+    """
+    Agrupamento 3 (bônus): itens vendidos por mês/ano (sazonalidade).
+
+    Extrai o período (ano-mês) da coluna DATA e conta os itens.
+
+    Args:
+        df: DataFrame limpo.
+
+    Returns:
+        Series com contagem de itens por período (YYYY-MM), ordenada.
+    """
+    periodo = df["DATA"].dt.to_period("M").astype(str)
+    return df.groupby(periodo).size()
+
+def exibir_agrupamento(titulo: str, serie: pd.Series) -> None:
+    """
+    Exibe um agrupamento de forma legível, com ranking e percentual.
+
+    Args:
+        titulo: título do agrupamento.
+        serie: Series resultante de um groupby().size().
+    """
+    print("\n" + "=" * 68)
+    print(f"SPRINT 6 — {titulo}")
+    print("=" * 68)
+
+    total = serie.sum()
+    for chave, valor in serie.items():
+        pct = (valor / total) * 100
+        print(f"  {chave:<20}: {valor:>8} itens  ({pct:.1f}%)")
+
+# --------------------------------------------------------------------
+# EXECUÇÃO DO SPRINT 6 NA BASE REAL
+# --------------------------------------------------------------------
+print("\n" + "=" * 68)
+print("SPRINT 6 — PADRÕES DE AGRUPAMENTO")
+print("=" * 68)
+
+exibir_agrupamento("Itens vendidos por GÊNERO", agrupar_por_genero(df))
+exibir_agrupamento("Itens vendidos por CATEGORIA", agrupar_por_categoria(df))
+
+print("\n" + "=" * 68)
+print("SPRINT 6 — Variação temporal (itens por mês/ano)")
+print("=" * 68)
+serie_mes = agrupar_por_mes(df)
+for periodo, valor in serie_mes.items():
+    print(f"  {periodo}: {valor:>8} itens")
+
+# ====================================================================
 # SPRINT 5 — RELATÓRIO FINAL (CONCLUSÕES)
 # --------------------------------------------------------------------
 # Objetivo: consolidar os insights dos Sprints 4 e 6 em um relatório
