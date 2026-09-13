@@ -1,4 +1,18 @@
+import pandas as pd
 import unittest
+
+def agrupar_por_genero(df: pd.DataFrame) -> pd.Series:
+    """Agrupamento 1: total de itens vendidos por gênero do cliente."""
+    return df.groupby("CL_GENERO").size().sort_values(ascending=False)
+
+def agrupar_por_categoria(df: pd.DataFrame) -> pd.Series:
+    """Agrupamento 2: total de itens vendidos por categoria de produto."""
+    return df.groupby("PR_CAT").size().sort_values(ascending=False)
+
+def agrupar_por_mes(df: pd.DataFrame) -> pd.Series:
+    """Agrupamento 3 (bônus): itens vendidos por mês/ano (sazonalidade)."""
+    periodo = df["DATA"].dt.to_period("M").astype(str)
+    return df.groupby(periodo).size()
 
 class TestAgrupamento(unittest.TestCase):
     def setUp(self):
